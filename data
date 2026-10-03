@@ -1,0 +1,19 @@
+---
+claimed_at: 2026-10-03T02:14:17Z
+claimed_by: hub
+class: standard
+completed: 2026-10-03T02:14:17Z
+created: 2026-10-02T19:24:55Z
+id: 1
+priority: high
+started: 2026-10-03T02:14:17Z
+status: done
+tags:
+- core
+title: Notifier facade and error hierarchy
+updated: 2026-10-03T02:14:17Z
+---
+
+Net::Async::Keycloak on IO::Async::Notifier (FOREIGNBUILDARGS, lazy Net::Async::HTTP child), ::Error::* one package per file. Model: ~/dev/p5-net-async-zitadel. Waits for the API design on the p5-www-keycloak board (card 1).
+
+ The sync twin is built (p5-www-keycloak, phase 1, design docs/superpowers/specs/2026-10-02-www-keycloak-design.md section 9): mirror WWW::Keycloak, WWW::Keycloak::Auth, ::OIDC, ::Admin and ::Error with _f methods. Decision taken 2026-10-03: depend on WWW-Keycloak and reuse WWW::Keycloak::Diff for the ensure_* comparison instead of duplicating it.
