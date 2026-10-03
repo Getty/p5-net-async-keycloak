@@ -51,7 +51,8 @@ sends through is its child notifier.
 # IO::Async::Notifier->new hands every constructor key to configure(), which
 # croaks on keys it does not know. Keep ours away from it.
 sub FOREIGNBUILDARGS {
-  my ( $class, %arg ) = @_;
+  my ( $class, @args ) = @_;
+  my %arg = @args == 1 && ref $args[0] eq 'HASH' ? %{ $args[0] } : @args;
   delete @arg{qw( base_url realm username password client_id client_secret token auth_realm http auth )};
   return %arg;
 }

@@ -10,6 +10,13 @@
 
 **Spec:** `p5-www-keycloak/docs/superpowers/specs/2026-10-02-www-keycloak-design.md`, Abschnitte 9 und 12 (Entscheidungen 2026-10-03).
 
+## Ausführung
+
+Ausgeführt am 2026-10-03 (`c83cb2b` bis `c2b6d73`). Ein unabhängiger Review hat danach
+Fehler im Zusammenspiel gleichzeitiger Aufrufe gefunden (Abbruch eines Aufrufers traf den
+gemeinsamen Login, ungeteiltes Nachladen der Schlüssel, Fehler ohne Loop als String), die in
+einem eigenen Commit mit Tests in `t/70-async.t` behoben sind. Maßgeblich ist das Repo.
+
 ## Stand des Codes in diesem Plan
 
 Der Code ist am 2026-10-03 als Prototyp gelaufen: `prove -lr t` mit 46 Tests grün, `dzil test` grün, `t/90-live-keycloak.t` grün gegen Keycloak 26.8.0. Die Tests in `t/20` bis `t/60` und `t/90` sind die von `WWW::Keycloak`, maschinell auf `_f->get` umgeschrieben und gegen dasselbe nachgebaute Keycloak gefahren; damit prüfen beide Clients dieselben Erwartungen.

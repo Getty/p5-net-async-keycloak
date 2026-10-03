@@ -61,10 +61,29 @@ As in L<WWW::Keycloak::OIDC>.
 has _discovery    => ( is => 'rw' );
 has _jwks         => ( is => 'rw' );
 has _jwks_fetched => ( is => 'rw' );
+has _in_flight    => ( is => 'ro', init_arg => undef, default => sub { {} } );
 
-async sub discovery_f {
+# One fetch for everybody who asks while it is under way, each with a view of
+# its own so that cancelling one does not cancel the fetch.
+sub _shared {
+  my ( $self, $key, $start ) = @_;
+  my $in_flight = $self->_in_flight;
+  unless ( $in_flight->{$key} ) {
+    my $future = $start->()->on_ready( sub { delete $in_flight->{$key} } );
+    return $future if $future->is_ready;
+    $in_flight->{$key} = $future;
+  }
+  return $in_flight->{$key}->without_cancel;
+}
+
+sub discovery_f {
   my ( $self ) = @_;
-  return $self->_discovery if $self->_discovery;
+  return Future->done( $self->_discovery ) if $self->_discovery;
+  return $self->_shared( discovery => sub { $self->_fetch_discovery_f } );
+}
+
+async sub _fetch_discovery_f {
+  my ( $self ) = @_;
   my $data = ( await $self->send_request_f( GET => $self->issuer.'/.well-known/openid-configuration' ) )->{data};
   $self->validation_error_class->throw( message => 'discovery for '.$self->issuer.' returned no JSON object' ) unless ref $data eq 'HASH';
   return $self->_discovery($data);
@@ -89,23 +108,49 @@ async sub endpoint_f {
 
 =cut
 
-sub token_endpoint_f    { $_[0]->endpoint_f('token_endpoint') }
-sub userinfo_endpoint_f { $_[0]->endpoint_f('userinfo_endpoint') }
-sub device_endpoint_f   { $_[0]->endpoint_f('device_authorization_endpoint') }
+sub token_endpoint_f         { $_[0]->endpoint_f('token_endpoint') }
+sub userinfo_endpoint_f      { $_[0]->endpoint_f('userinfo_endpoint') }
+sub introspection_endpoint_f { $_[0]->endpoint_f('introspection_endpoint') }
+sub end_session_endpoint_f   { $_[0]->endpoint_f('end_session_endpoint') }
+sub device_endpoint_f        { $_[0]->endpoint_f('device_authorization_endpoint') }
+sub jwks_uri_f               { $_[0]->endpoint_f('jwks_uri') }
 
-async sub jwks_f {
+sub jwks_f {
   my ( $self, %opt ) = @_;
-  if ( $opt{force_refresh} || !$self->_jwks ) {
-    my $uri = await $self->endpoint_f('jwks_uri');
-    $self->_jwks( ( await $self->send_request_f( GET => $uri ) )->{data} );
+  return Future->done( $self->_jwks ) if $self->_jwks && !$opt{force_refresh};
+  return $self->_shared( jwks => sub {
+    # counted from the start, so that verifications already under way see it
     $self->_jwks_fetched( $self->now->() );
-  }
-  return $self->_jwks;
+    $self->_fetch_jwks_f;
+  } );
 }
+
+async sub _fetch_jwks_f {
+  my ( $self ) = @_;
+  my $uri = await $self->jwks_uri_f;
+  return $self->_jwks( ( await $self->send_request_f( GET => $uri ) )->{data} );
+}
+
+=method token_endpoint_f
+
+=method userinfo_endpoint_f
+
+=method introspection_endpoint_f
+
+=method end_session_endpoint_f
+
+=method device_endpoint_f
+
+=method jwks_uri_f
+
+A URL from the discovery document.
 
 =method jwks_f
 
     my $keys = await $oidc->jwks_f( force_refresh => 1 );
+
+Callers asking while a fetch is under way share it; so do callers of
+L</discovery_f>.
 
 =cut
 
@@ -123,7 +168,8 @@ async sub verify_token_f {
   my $keys   = await $self->jwks_f;
   my $claims = eval { decode_jwt( %check, kid_keys => $keys ) };
   my $error  = $@;
-  if ( !$claims && $error =~ /kid_keys lookup failed/ && $self->now->() - ( $self->_jwks_fetched // 0 ) >= $self->jwks_min_age ) {
+  my $again  = $self->_in_flight->{jwks} || $self->now->() - ( $self->_jwks_fetched // 0 ) >= $self->jwks_min_age;
+  if ( !$claims && $error =~ /kid_keys lookup failed/ && $again ) {
     $keys   = await $self->jwks_f( force_refresh => 1 );
     $claims = eval { decode_jwt( %check, kid_keys => $keys ) };
     $error  = $@;

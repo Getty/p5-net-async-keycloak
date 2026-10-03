@@ -48,7 +48,11 @@ A failed future with a validation error.
 sub send_request_f {
   my ( $self, $method, $url, %arg ) = @_;
   my $request = $self->build_request( $method, $url, %arg );
-  return $self->http->do_request( request => $request )->else( sub {
+  # Net::Async::HTTP dies instead of failing when it is in no loop
+  my $sent = eval { $self->http->do_request( request => $request ) };
+  return Future->fail( $self->network_error_class->new( message => $method.' '.$url.': could not send ('
+    .( $@ =~ s/ at \S+ line \d+.*//sr ).'); was the Net::Async::Keycloak added to a loop?' ) ) unless $sent;
+  return $sent->else( sub {
     my ( $message ) = @_;
     return Future->fail($message) if blessed $message;
     return Future->fail( $self->network_error_class->new( message => $method.' '.$url.': '.$message ) );

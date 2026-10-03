@@ -65,7 +65,7 @@ async sub call_f {
   my $result = eval { await $self->send_request_f( $method, $url, %arg, bearer => $bearer ) };
   if ( my $error = $@ ) {
     die $error unless blessed $error && $error->isa('WWW::Keycloak::Error::API') && $error->is_unauthorized && $self->auth->renewable;
-    $self->auth->invalidate;
+    $self->auth->invalidate($bearer);
     $result = await $self->send_request_f( $method, $url, %arg, bearer => await( $self->auth->token_f ) );
   }
   return $result;
@@ -121,6 +121,7 @@ sub export_realm_f {
 
 sub partial_import_f {
   my ( $self, $rep, %opt ) = @_;
+  return $self->fail_validation('partial_import needs a representation') unless ref $rep eq 'HASH';
   return $self->_data_f( POST => '/partialImport', { ifResourceExists => $opt{if_exists} // 'FAIL', %$rep } );
 }
 
@@ -217,7 +218,11 @@ sub list_executions_f         { $_[0]->_data_f( GET => '/authentication/flows/'.
 sub copy_flow_f               { $_[0]->_create_f( '/authentication/flows/'.$_[0]->_esc( $_[1] ).'/copy', { newName => $_[2] } ) }
 sub get_execution_config_f    { $_[0]->_data_f( GET => '/authentication/config/'.$_[0]->_esc( $_[1] ) ) }
 sub create_execution_config_f { $_[0]->_create_f( '/authentication/executions/'.$_[0]->_esc( $_[1] ).'/config', $_[2] ) }
-sub update_execution_config_f { $_[0]->_done_f( PUT => '/authentication/config/'.$_[0]->_esc( $_[1] ), { %{ $_[2] }, id => $_[1] } ) }
+sub update_execution_config_f {
+  my ( $self, $id, $rep ) = @_;
+  return $self->fail_validation('update_execution_config needs a representation') unless ref $rep eq 'HASH';
+  return $self->_done_f( PUT => '/authentication/config/'.$self->_esc($id), { %$rep, id => $id } );
+}
 sub describe_authenticator_f  { $_[0]->_data_f( GET => '/authentication/config-description/'.$_[0]->_esc( $_[1] ) ) }
 
 =method server_info_f

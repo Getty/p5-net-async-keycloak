@@ -100,10 +100,14 @@ sub token_f {
   return Future->done( $self->fixed_token ) if $self->has_fixed_token;
   return Future->done( $self->_access )
     if defined $self->_access && $self->now->() < $self->_access_expires - $self->margin;
-  return $self->_pending if $self->_pending;
-  my $login = $self->_renew_f->on_ready( sub { $self->_pending(undef) } );
-  $self->_pending($login) unless $login->is_ready;
-  return $login;
+  unless ( $self->_pending ) {
+    my $login = $self->_renew_f->on_ready( sub { $self->_pending(undef) } );
+    return $login if $login->is_ready;
+    $self->_pending($login);
+  }
+  # every caller gets its own view: cancelling one must not cancel the login
+  # the others are waiting for
+  return $self->_pending->without_cancel;
 }
 
 =method token_f
@@ -115,13 +119,21 @@ A future of a token that is valid for at least C<margin> more seconds.
 =cut
 
 sub invalidate {
-  my ( $self ) = @_;
+  my ( $self, $refused ) = @_;
+  # a refusal of a token that was already replaced says nothing about the new one
+  return if defined $refused && ( $self->_access // '' ) ne $refused;
   $self->_access(undef);
   $self->_refresh(undef);
   return;
 }
 
 =method invalidate
+
+    $auth->invalidate($refused_token);
+
+As in L<WWW::Keycloak::Auth>. Given the token that was refused, it forgets the
+current token only if that is still the one; requests that were refused
+together then cause one new login, not one each.
 
 =method renewable
 

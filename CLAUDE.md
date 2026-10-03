@@ -2,7 +2,7 @@
 
 Net::Async::Keycloak — IO::Async-based client for Keycloak: the async twin of `WWW::Keycloak` (`p5-www-keycloak`), same API surface with `_f` suffixes returning Futures, modelled on `Net::Async::Zitadel`. Moo-based on `IO::Async::Notifier`; released to CPAN via Dist::Zilla `[@Author::GETTY]`.
 
-The sync twin leads: an API lands in `p5-www-keycloak` first and is mirrored here. Skeleton state: nothing is implemented yet, the work is on the karr board.
+The sync twin leads: an API lands in `p5-www-keycloak` first and is mirrored here. Phase 1 is built; until WWW-Keycloak is installed, run tests with `PERL5LIB=~/dev/p5-www-keycloak/lib`.
 
 ## Delegation
 

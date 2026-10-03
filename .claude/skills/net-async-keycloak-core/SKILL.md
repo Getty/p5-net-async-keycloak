@@ -7,10 +7,14 @@ description: Use when working on Net::Async::Keycloak — the IO::Async/Future c
 
 IO::Async-based client for Keycloak, the async twin of `WWW::Keycloak`
 (`~/dev/p5-www-keycloak`), modelled on `Net::Async::Zitadel` (`~/dev/p5-net-async-zitadel`).
-**Skeleton state: nothing is implemented yet.** The layout below is the plan; the karr
-board carries the work.
+Phase 1 is built (2026-10-03); the plan is `docs/superpowers/plans/2026-10-03-net-async-keycloak-phase-1.md`.
+Requests are built and responses read by `WWW::Keycloak::Role::HTTP` (`build_request`,
+`read_response`); `Net::Async::Keycloak::Role::HTTP` only sends, and classes compose it
+**before** the sync role so its error classes win. `ensure_*_f` compare with
+`WWW::Keycloak::Diff`. The tests in `t/20`–`t/60` and `t/90` are WWW::Keycloak's, ported to
+`_f->get`; when the sync tests change, port them again.
 
-## Planned module map
+## Module map
 
 - `Net::Async::Keycloak` — Moo class extending `IO::Async::Notifier`: `base_url`, `realm`,
   optional credentials; lazy `http` (`Net::Async::HTTP`, added as child), lazy `oidc` and
