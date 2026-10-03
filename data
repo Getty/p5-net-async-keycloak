@@ -1,0 +1,21 @@
+---
+claimed_at: 2026-10-03T02:14:17Z
+claimed_by: hub
+class: standard
+completed: 2026-10-03T02:14:17Z
+created: 2026-10-02T19:24:56Z
+depends_on:
+- 1
+id: 2
+priority: high
+started: 2026-10-03T02:14:17Z
+status: done
+tags:
+- oidc
+- admin
+- twin
+title: Mirror WWW::Keycloak OIDC and Admin API with _f methods
+updated: 2026-10-03T02:14:17Z
+---
+
+Every public method of WWW::Keycloak::OIDC and ::Admin as *_f returning a Future. Follows the sync twin; do not invent API here.
