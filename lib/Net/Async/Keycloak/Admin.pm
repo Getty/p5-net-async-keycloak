@@ -14,7 +14,7 @@ use URI::Escape qw( uri_escape_utf8 );
 use WWW::Keycloak::Diff;
 use namespace::autoclean;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 =synopsis
 

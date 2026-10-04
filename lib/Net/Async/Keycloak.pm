@@ -15,7 +15,7 @@ use Net::Async::Keycloak::OIDC;
 use Types::Standard qw( InstanceOf Object Str );
 use URI::Escape qw( uri_escape_utf8 );
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 =synopsis
 

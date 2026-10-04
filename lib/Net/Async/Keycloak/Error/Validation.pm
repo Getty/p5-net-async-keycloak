@@ -5,7 +5,7 @@ package Net::Async::Keycloak::Error::Validation;
 use Moo;
 extends 'WWW::Keycloak::Error::Validation', 'Net::Async::Keycloak::Error';
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 =description
 
