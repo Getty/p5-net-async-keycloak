@@ -1,0 +1,15 @@
+---
+class: standard
+created: 2026-10-13T20:53:13Z
+id: 5
+priority: medium
+started: 2026-10-13T20:53:29Z
+status: review
+title: 'Mirror WWW::Keycloak k7: list_all_users_f, list_users_f POD names the 100
+  cap'
+updated: 2026-10-13T20:59:59Z
+---
+
+Mirror of p5-www-keycloak k7 (a18fcf9). Loop over list_users_f with first/max (page 100) until a short page; pass other query params; first/max -> Validation error. Open for maintainer: auto-paging list_users, page size, name.
+
+2026-10-13 20:58 Done (0dd4af3): NEU list_all_users_f(%query) pagt ueber list_users_f mit first/max (Seitengroesse 100) bis zur kurzen Seite, reicht uebrige Query-Parameter durch, first/max -> Error::Validation (Meldung wie WWW::Keycloak). list_users_f unveraendert, POD nennt die 100er-Kappe. t/lib/FakeKeycloak pagt wie Keycloak (max default 100). Test in t/50-admin.t: 101 User -> 100 bzw. 101 ohne Duplikate, genau 100 endet sauber, first/max abgelehnt; vor dem Fix rot. NICHT gemacht: Live-Test mit >100 Usern. Offen fuer Maintainer: ob list_users selbst pagen soll, feste Seitengroesse 100, Name list_all_users_f.
