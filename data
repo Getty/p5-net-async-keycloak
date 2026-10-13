@@ -1,0 +1,15 @@
+---
+class: standard
+completed: 2026-10-13T20:59:51Z
+created: 2026-10-13T20:53:12Z
+id: 3
+priority: high
+started: 2026-10-13T20:53:20Z
+status: done
+title: 'Mirror WWW::Keycloak k8: Auth::_grant_f throws Error::API without access_token'
+updated: 2026-10-13T20:59:51Z
+---
+
+Mirror of p5-www-keycloak k8 (4606c6d). Auth.pm ~170-184: missing/empty access_token or non-JSON 2xx -> Error::API, same message as WWW::Keycloak::Auth::_grant (status from the response). Test analogous to t/31-auth-no-token.t.
+
+2026-10-13 20:58 Done (479ca10, Branch worktree-mirror-k6-k7-k8): Auth::_grant_f wirft Error::API 'admin login failed: the token endpoint answered <status> without an access_token' bei fehlendem/leerem access_token oder Nicht-JSON-2xx, Status aus der Response, Meldung identisch zu WWW::Keycloak. t/31-auth-no-token.t (HTML-200, JSON ohne Token, leeres Token; 1 Request, kein gecachter Token, zweiter token_f-Aufruf macht neuen Request); vor dem Fix rot, danach prove -I ~/dev/p5-www-keycloak/lib -lr t gruen. cpanfile: WWW::Keycloak 0.002. Test nutzt ein kleines Inline-Fake-http statt FakeHTTP.
