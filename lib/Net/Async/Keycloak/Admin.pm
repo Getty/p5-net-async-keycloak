@@ -135,6 +135,7 @@ sub delete_client_f { $_[0]->_done_f( DELETE => '/clients/'.$_[0]->_esc( $_[1] )
 
 async sub find_client_f {
   my ( $self, $client_id ) = @_;
+  $self->validation_error_class->throw( message => 'find_client needs a clientId' ) unless defined $client_id && length $client_id;
   my ( $client ) = grep { $_->{clientId} eq $client_id } @{ await $self->list_clients_f( clientId => $client_id ) };
   return $client;
 }
@@ -153,6 +154,7 @@ sub delete_client_scope_f { $_[0]->_done_f( DELETE => '/client-scopes/'.$_[0]->_
 
 async sub find_client_scope_f {
   my ( $self, $name ) = @_;
+  $self->validation_error_class->throw( message => 'find_client_scope needs a name' ) unless defined $name && length $name;
   my ( $scope ) = grep { $_->{name} eq $name } @{ await $self->list_client_scopes_f };
   return $scope;
 }
@@ -196,6 +198,7 @@ sub delete_user_f { $_[0]->_done_f( DELETE => '/users/'.$_[0]->_esc( $_[1] ) ) }
 
 async sub find_user_f {
   my ( $self, $username ) = @_;
+  $self->validation_error_class->throw( message => 'find_user needs a username' ) unless defined $username && length $username;
   my ( $user ) = grep { lc $_->{username} eq lc $username } @{ await $self->list_users_f( username => $username, exact => 'true' ) };
   return $user;
 }
