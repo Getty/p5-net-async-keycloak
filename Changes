@@ -1,6 +1,10 @@
 Revision history for Net-Async-Keycloak
 
 {{$NEXT}}
+    - Net::Async::Keycloak::Admin: list_all_users_f pages through list_users_f
+      with first and max until a short page arrives, so a realm with more
+      than 100 users is listed whole; list_users_f stays one request and its
+      documentation now says Keycloak answers at most 100 users by default
     - Net::Async::Keycloak::Admin: find_client_f, find_client_scope_f and
       find_user_f fail with Error::Validation, without a request, for an
       undef or empty key instead of listing everything and matching nothing

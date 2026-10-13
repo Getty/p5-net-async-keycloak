@@ -191,6 +191,43 @@ async sub delete_protocol_mapper_f {
 ####  users
 
 sub list_users_f  { my ( $self, %q ) = @_; $self->_data_f( GET => '/users'.$self->_query(%q) ) }
+async sub list_all_users_f {
+  my ( $self, %q ) = @_;
+  $self->validation_error_class->throw( message => 'list_all_users pages by itself, do not give first or max' )
+    if exists $q{first} || exists $q{max};
+  my $size = 100;
+  my ( $first, @users ) = (0);
+  while (1) {
+    my $page = await $self->list_users_f( %q, first => $first, max => $size );
+    push @users, @$page;
+    last if @$page < $size;
+    $first += $size;
+  }
+  return \@users;
+}
+
+=method list_users_f
+
+    my $users = await $admin->list_users_f( search => 'ali', max => 20 );
+
+One request, so Keycloak answers at most its default page of 100 users when
+C<max> is not given, whatever the realm holds. Use L</list_all_users_f> to get
+every user.
+
+=method list_all_users_f
+
+    my $users = await $admin->list_all_users_f( enabled => 'true' );
+
+A future of every user of the realm: asks for pages of 100 with C<first> and
+C<max> until a short page arrives, one request after the other without
+blocking the loop. Other query parameters, such as C<search>, are passed
+through; C<first> and C<max> are not accepted and fail the future with a
+L<Net::Async::Keycloak::Error::Validation>, without a request. Costs one
+request per 100 users and is not atomic, so users created or deleted meanwhile
+may be missed or seen twice.
+
+=cut
+
 sub get_user_f    { $_[0]->_data_f( GET => '/users/'.$_[0]->_esc( $_[1] ) ) }
 sub create_user_f { $_[0]->_create_f( '/users', $_[1] ) }
 sub update_user_f { $_[0]->_done_f( PUT => '/users/'.$_[0]->_esc( $_[1] ), $_[2] ) }
@@ -283,8 +320,6 @@ sub describe_authenticator_f  { $_[0]->_data_f( GET => '/authentication/config-d
 =method update_protocol_mapper_f
 
 =method delete_protocol_mapper_f
-
-=method list_users_f
 
 =method find_user_f
 

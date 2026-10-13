@@ -136,6 +136,33 @@ subtest 'no Location header' => sub {
   like( "$@", qr/sent no Location header/, 'and says why' );
 };
 
+subtest 'list_users_f is capped, list_all_users_f is not' => sub {
+  $fake->realm('main')->{users} = {};
+  $admin->create_user_f( { username => sprintf( 'u%03d', $_ ) } )->get for 1 .. 101;
+  is( scalar @{ $admin->list_users_f->get }, 100, 'list_users_f stops at the default page of 100' );
+  is( scalar @{ $admin->list_users_f( max => 5, first => 99 )->get }, 2, 'first and max are passed on' );
+  my $before = scalar @{ $fake->requests };
+  my $all    = $admin->list_all_users_f->get;
+  is( scalar @$all, 101, 'list_all_users_f returns all 101' );
+  my %seen;
+  $seen{ $_->{id} }++ for @$all;
+  is( scalar keys %seen, 101, 'without a repeat' );
+  is( scalar @{ $fake->requests } - $before, 2, 'in two requests' );
+  is( scalar @{ $admin->list_all_users_f( username => 'u007' )->get }, 1, 'other query parameters are passed through' );
+  like( $fake->requests->[-1]->uri->query, qr/(?:\A|&)username=u007(?:&|\z)/, 'on the wire' );
+  $fake->realm('main')->{users} = {};
+  $admin->create_user_f( { username => sprintf( 'v%03d', $_ ) } )->get for 1 .. 100;
+  is( scalar @{ $admin->list_all_users_f->get }, 100, 'exactly one full page ends on the empty page behind it' );
+  for my $key (qw( first max )) {
+    my $count  = scalar @{ $fake->requests };
+    my $future = eval { $admin->list_all_users_f( $key => 1 ) };
+    my $ok     = $future && eval { $future->get; 1 };
+    my $error  = $@;
+    ok( !$ok && ref $error && $error->isa('Net::Async::Keycloak::Error::Validation'), "$key is refused with a validation error" );
+    is( scalar @{ $fake->requests }, $count, 'and asks Keycloak nothing' );
+  }
+};
+
 subtest 'find_* without a key' => sub {
   for my $call ( [ find_client => 'clientId' ], [ find_client_scope => 'name' ], [ find_user => 'username' ] ) {
     my ( $method, $key ) = @$call;
