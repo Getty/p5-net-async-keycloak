@@ -167,7 +167,7 @@ sub _client {
 async sub _grant_f {
   my ( $self, $form ) = @_;
   my $now  = $self->now->();
-  my $data = eval { ( await $self->send_request_f( POST => $self->token_endpoint, form => $form ) )->{data} };
+  my $answer = eval { await $self->send_request_f( POST => $self->token_endpoint, form => $form ) };
   if ( my $error = $@ ) {
     die $error unless blessed $error && $error->isa('WWW::Keycloak::Error::API');
     $self->api_error_class->throw(
@@ -175,6 +175,14 @@ async sub _grant_f {
       http_status => $error->http_status,
       api_message => $error->api_message,
       oauth_error => $error->oauth_error
+    );
+  }
+  my $data = $answer->{data};
+  # a 2xx that is no token response (a proxy's HTML page) must not be cached as a login
+  unless ( ref $data eq 'HASH' && defined $data->{access_token} && length $data->{access_token} ) {
+    $self->api_error_class->throw(
+      message     => 'admin login failed: the token endpoint answered '.$answer->{status}.' without an access_token',
+      http_status => $answer->{status}
     );
   }
   $self->_access( $data->{access_token} );

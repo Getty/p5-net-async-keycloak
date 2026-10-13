@@ -9,7 +9,7 @@ requires 'Moo';
 requires 'Net::Async::HTTP';
 requires 'Type::Tiny';
 requires 'URI';
-requires 'WWW::Keycloak', '0.001';
+requires 'WWW::Keycloak', '0.002';
 requires 'namespace::autoclean', '0.16';
 
 on test => sub {
