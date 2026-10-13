@@ -1,0 +1,16 @@
+---
+class: standard
+completed: 2026-10-13T20:59:56Z
+created: 2026-10-13T20:53:12Z
+id: 4
+priority: medium
+started: 2026-10-13T20:53:24Z
+status: done
+title: 'Mirror WWW::Keycloak k6: find_client_f/find_client_scope_f/find_user_f validate
+  empty key'
+updated: 2026-10-13T20:59:56Z
+---
+
+Mirror of p5-www-keycloak k6 (14c559f). undef/empty key -> Validation error without a request. Diff is shared, nothing to do. Maintainer to confirm throw-vs-list is wanted.
+
+2026-10-13 20:58 Done (4d592b7): find_client_f/find_client_scope_f/find_user_f schlagen bei undef/leerem Schluessel mit Error::Validation fehl (gleiche Meldungen wie WWW::Keycloak), kein Request; ueber async sub als failed Future. Test in t/50-admin.t (undef und '', Request-Zaehler unveraendert), vor dem Fix rot. Diff geteilt, nichts zu tun. VERHALTENSAENDERUNG: statt alles zu listen wird jetzt fehlgeschlagen; ensure_*_f mit leerem Schluessel scheitert ebenfalls ueber find_*. Offen fuer Maintainer: Bestaetigung, dass Validation-Fehler gewollt ist. POD der find_*_f ist leer, nichts ergaenzt.
