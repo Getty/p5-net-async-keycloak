@@ -14,6 +14,22 @@ Requests are built and responses read by `WWW::Keycloak::Role::HTTP` (`build_req
 `WWW::Keycloak::Diff`. The tests in `t/20`–`t/60` and `t/90` are WWW::Keycloak's, ported to
 `_f->get`; when the sync tests change, port them again.
 
+## The delegation model — why the main agent delegates
+
+Four roles: `net-async-keycloak-worker` (implement, refactor, debug),
+`net-async-keycloak-test-writer` (tests), `net-async-keycloak-release-manager` (commit,
+`Changes`, card → done, pre-release audit), `net-async-keycloak-doc-writer` (POD). All
+four get their skills force-loaded via `briefing.skills`. The orchestrating main agent gets
+**no briefing** — it coordinates, inspects, plans, reviews diffs, runs tests and edits
+non-behavioral docs, and delegates anything behavior-relevant here. Reason: only the
+briefed agents see the sync/async twin invariant and the `WWW::Keycloak` role contract in
+context; an unbriefed hand inside `lib/` would break exactly those. When in doubt,
+delegate.
+
+Behavior-relevant = runtime behavior, the public API (`Net::Async::Keycloak`, `::OIDC`,
+`::Admin`), the sync/async sibling invariant, error handling, tests and performance. Pure
+prose docs and `Changes` notes are not.
+
 ## Module map
 
 - `Net::Async::Keycloak` — Moo class extending `IO::Async::Notifier`: `base_url`, `realm`,
