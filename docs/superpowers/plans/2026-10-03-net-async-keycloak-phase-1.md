@@ -2,60 +2,60 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Den Async-Zwilling von `WWW::Keycloak` Phase 1 bauen: dieselbe Fassade, dieselben Teile, jede Methode als `_f` mit Future, auf IO::Async und Net::Async::HTTP.
+**Goal:** Build the async twin of `WWW::Keycloak` phase 1: the same facade, the same parts, every method as `_f` with a Future, on IO::Async and Net::Async::HTTP.
 
-**Architecture:** `Net::Async::Keycloak` ist ein Moo-`IO::Async::Notifier` mit einem `Net::Async::HTTP` als Kind. Anfragen baut und Antworten liest `WWW::Keycloak::Role::HTTP` (`build_request`, `read_response`); die Rolle `Net::Async::Keycloak::Role::HTTP` sendet nur und liefert Futures, und weil sie vor der Sync-Rolle eingebunden wird, gewinnen ihre Fehlerklassen. Die `ensure_*_f`-Methoden vergleichen mit `WWW::Keycloak::Diff`. Fehlerklassen erben von den Sync-Klassen.
+**Architecture:** `Net::Async::Keycloak` is a Moo `IO::Async::Notifier` with a `Net::Async::HTTP` as child. Requests are built and responses read by `WWW::Keycloak::Role::HTTP` (`build_request`, `read_response`); the role `Net::Async::Keycloak::Role::HTTP` only sends and returns Futures, and because it is composed before the sync role, its error classes win. The `ensure_*_f` methods compare with `WWW::Keycloak::Diff`. Error classes inherit from the sync classes.
 
-**Tech Stack:** Perl 5.20+, Moo, IO::Async, Net::Async::HTTP, Future, Future::AsyncAwait, Crypt::JWT, WWW::Keycloak. Dist::Zilla mit `[@Author::GETTY]`.
+**Tech Stack:** Perl 5.20+, Moo, IO::Async, Net::Async::HTTP, Future, Future::AsyncAwait, Crypt::JWT, WWW::Keycloak. Dist::Zilla with `[@Author::GETTY]`.
 
-**Spec:** `p5-www-keycloak/docs/superpowers/specs/2026-10-02-www-keycloak-design.md`, Abschnitte 9 und 12 (Entscheidungen 2026-10-03).
+**Spec:** `p5-www-keycloak/docs/superpowers/specs/2026-10-02-www-keycloak-design.md`, sections 9 and 12 (decisions 2026-10-03).
 
-## Ausführung
+## Execution
 
-Ausgeführt am 2026-10-03 (`c83cb2b` bis `c2b6d73`). Ein unabhängiger Review hat danach
-Fehler im Zusammenspiel gleichzeitiger Aufrufe gefunden (Abbruch eines Aufrufers traf den
-gemeinsamen Login, ungeteiltes Nachladen der Schlüssel, Fehler ohne Loop als String), die in
-einem eigenen Commit mit Tests in `t/70-async.t` behoben sind. Maßgeblich ist das Repo.
+Executed on 2026-10-03 (`c83cb2b` to `c2b6d73`). An independent review afterwards found
+bugs in the interplay of concurrent calls (one caller's cancellation hit the
+shared login, unshared reloading of the keys, errors without a loop as a string), which are fixed in
+a separate commit with tests in `t/70-async.t`. The repo is authoritative.
 
-## Stand des Codes in diesem Plan
+## State of the code in this plan
 
-Der Code ist am 2026-10-03 als Prototyp gelaufen: `prove -lr t` mit 46 Tests grün, `dzil test` grün, `t/90-live-keycloak.t` grün gegen Keycloak 26.8.0. Die Tests in `t/20` bis `t/60` und `t/90` sind die von `WWW::Keycloak`, maschinell auf `_f->get` umgeschrieben und gegen dasselbe nachgebaute Keycloak gefahren; damit prüfen beide Clients dieselben Erwartungen.
+The code ran as a prototype on 2026-10-03: `prove -lr t` with 46 tests green, `dzil test` green, `t/90-live-keycloak.t` green against Keycloak 26.8.0. The tests in `t/20` to `t/60` and `t/90` are those of `WWW::Keycloak`, mechanically rewritten to `_f->get` and run against the same emulated Keycloak; so both clients check the same expectations.
 
-`WWW::Keycloak` muss den Commit `fdaf12d` („Split request building and response reading from sending“) enthalten. Bis `WWW-Keycloak` installiert ist, läuft alles mit `PERL5LIB=~/dev/p5-www-keycloak/lib`.
+`WWW::Keycloak` must contain commit `fdaf12d` ("Split request building and response reading from sending"). Until `WWW-Keycloak` is installed, everything runs with `PERL5LIB=~/dev/p5-www-keycloak/lib`.
 
 ## Global Constraints
 
-- Jede öffentliche Methode heißt wie in `WWW::Keycloak` plus `_f` und liefert eine Future desselben Ergebnisses. Hier wird keine API erfunden, die der Sync-Client nicht hat.
-- Keine Bibliothek ruft `->get` auf einer Future; nichts blockiert die Loop.
-- Anfragen bauen und Antworten lesen ausschließlich über `build_request`/`read_response` aus `WWW::Keycloak::Role::HTTP`; der Vergleich in `ensure_*_f` ausschließlich über `WWW::Keycloak::Diff`.
-- Klassen binden `Net::Async::Keycloak::Role::HTTP` **vor** `WWW::Keycloak::Role::HTTP` ein (bei Moo gewinnt die erste Rolle still), damit die Fehler dieser Dist geworfen werden.
-- `IO::Async::Notifier->new` reicht jeden Konstruktor-Schlüssel an `configure` weiter: eigene Attribute in `FOREIGNBUILDARGS` entfernen; `BUILDARGS` selbst schreiben, weil der Elternteil keine Moo-Klasse ist.
-- Ein Paket pro Datei, `# ABSTRACT:` und `our $VERSION = '0.001';` überall; `.t`-Dateien mit Shebang und `done_testing;`; `prove -lr t`.
-- **Niemand außer `net-async-keycloak-release-manager` committet.**
+- Every public method is named as in `WWW::Keycloak` plus `_f` and returns a Future of the same result. No API is invented here that the sync client does not have.
+- No library calls `->get` on a Future; nothing blocks the loop.
+- Building requests and reading responses only via `build_request`/`read_response` from `WWW::Keycloak::Role::HTTP`; the comparison in `ensure_*_f` only via `WWW::Keycloak::Diff`.
+- Classes compose `Net::Async::Keycloak::Role::HTTP` **before** `WWW::Keycloak::Role::HTTP` (with Moo the first role silently wins), so the errors of this dist are thrown.
+- `IO::Async::Notifier->new` passes every constructor key on to `configure`: remove own attributes in `FOREIGNBUILDARGS`; write `BUILDARGS` yourself, because the parent is not a Moo class.
+- One package per file, `# ABSTRACT:` and `our $VERSION = '0.001';` everywhere; `.t` files with shebang and `done_testing;`; `prove -lr t`.
+- **Nobody except `net-async-keycloak-release-manager` commits.**
 
 ## Review Focus
 
-1. **Mehrere Aufrufe brauchen gleichzeitig ein Admin-Token.** Erwartet: ein Login, alle bekommen dasselbe Token. Test `callers waiting for a token share one login` in `t/70-async.t` (Aufgabe 3).
-2. **Ein Login schlägt fehl.** Erwartet: Der nächste Aufruf versucht es neu, statt den alten Fehler zu erben. Test `a failed login does not stick` in `t/70-async.t` (Aufgabe 3).
-3. **Keycloak ist nicht erreichbar.** Erwartet: eine fehlgeschlagene Future mit `Net::Async::Keycloak::Error::Network`, die die Anfrage nennt. Test `no answer at all` in `t/20-errors.t` (Aufgabe 3).
-4. **Code für den Sync-Client fängt Fehler des Async-Clients.** Erwartet: Jeder Fehler ist auch die passende `WWW::Keycloak::Error`-Klasse. Test `classes and stringification` in `t/20-errors.t` (Aufgabe 3).
-5. **Ein Keycloak-Neustart mitten in einem Setup.** Erwartet wie im Sync-Client: genau ein neuer Login. Test `a refused token is renewed once` in `t/50-admin.t` (Aufgabe 3).
+1. **Several calls need an admin token at the same time.** Expected: one login, all get the same token. Test `callers waiting for a token share one login` in `t/70-async.t` (task 3).
+2. **A login fails.** Expected: the next call tries again instead of inheriting the old error. Test `a failed login does not stick` in `t/70-async.t` (task 3).
+3. **Keycloak is unreachable.** Expected: a failed Future with `Net::Async::Keycloak::Error::Network` that names the request. Test `no answer at all` in `t/20-errors.t` (task 3).
+4. **Code for the sync client catches errors of the async client.** Expected: every error is also the matching `WWW::Keycloak::Error` class. Test `classes and stringification` in `t/20-errors.t` (task 3).
+5. **A Keycloak restart in the middle of a setup.** Expected as in the sync client: exactly one new login. Test `a refused token is renewed once` in `t/50-admin.t` (task 3).
 
 ---
 
-### Task 1: Fehler, HTTP-Rolle, Auth
+### Task 1: Errors, HTTP role, Auth
 
 **Files:**
-- Modify: `cpanfile` (ganz ersetzen)
+- Modify: `cpanfile` (replace entirely)
 - Create: `lib/Net/Async/Keycloak/Error.pm`, `lib/Net/Async/Keycloak/Error/Validation.pm`, `lib/Net/Async/Keycloak/Error/Network.pm`, `lib/Net/Async/Keycloak/Error/API.pm`
 - Create: `lib/Net/Async/Keycloak/Role/HTTP.pm`, `lib/Net/Async/Keycloak/Auth.pm`
-- Create: `t/lib/FakeKeycloak.pm` (Kopie aus `p5-www-keycloak`), `t/lib/FakeHTTP.pm`
+- Create: `t/lib/FakeKeycloak.pm` (copy from `p5-www-keycloak`), `t/lib/FakeHTTP.pm`
 - Test: `t/30-auth.t`
 
 **Interfaces:**
-- Produces: `Net::Async::Keycloak::Error::*` (je auch `WWW::Keycloak::Error::*` und `Net::Async::Keycloak::Error`); Rolle mit `send_request_f( $method, $url, %arg )` → Future von `{ status, data, location }`, `fail_validation($msg)`, `api_error_class`, `network_error_class`, `validation_error_class`; `Net::Async::Keycloak::Auth->new( http =>, token_endpoint =>, ... )` mit `token_f`, `invalidate`, `renewable`. `FakeHTTP->new( fake => $fake_keycloak )->do_request( request => $req )` → erledigte Future.
+- Produces: `Net::Async::Keycloak::Error::*` (each also `WWW::Keycloak::Error::*` and `Net::Async::Keycloak::Error`); role with `send_request_f( $method, $url, %arg )` → Future of `{ status, data, location }`, `fail_validation($msg)`, `api_error_class`, `network_error_class`, `validation_error_class`; `Net::Async::Keycloak::Auth->new( http =>, token_endpoint =>, ... )` with `token_f`, `invalidate`, `renewable`. `FakeHTTP->new( fake => $fake_keycloak )->do_request( request => $req )` → done Future.
 
-- [ ] **Step 1: `cpanfile` ersetzen, installieren**
+- [ ] **Step 1: Replace `cpanfile`, install**
 
 `cpanfile`:
 
@@ -81,9 +81,9 @@ on test => sub {
 };
 ```
 
-- [ ] **Step 2: Test-Hilfen**
+- [ ] **Step 2: Test helpers**
 
-`t/lib/FakeKeycloak.pm` aus `~/dev/p5-www-keycloak/t/lib/` kopieren, unverändert. Dazu:
+Copy `t/lib/FakeKeycloak.pm` from `~/dev/p5-www-keycloak/t/lib/`, unchanged. In addition:
 
 `t/lib/FakeHTTP.pm`:
 
@@ -114,7 +114,7 @@ sub do_request {
 1;
 ```
 
-- [ ] **Step 3: Test schreiben und scheitern sehen**
+- [ ] **Step 3: Write the test and watch it fail**
 
 `t/30-auth.t`:
 
@@ -204,9 +204,9 @@ subtest 'refusals' => sub {
 done_testing;
 ```
 
-Run: `prove -lr t/30-auth.t` — Expected: FAIL mit `Can't locate Net/Async/Keycloak/Auth.pm`.
+Run: `prove -lr t/30-auth.t` — Expected: FAIL with `Can't locate Net/Async/Keycloak/Auth.pm`.
 
-- [ ] **Step 4: Fehlerklassen, Rolle, Auth schreiben**
+- [ ] **Step 4: Write error classes, role, Auth**
 
 `lib/Net/Async/Keycloak/Error.pm`:
 
@@ -572,24 +572,24 @@ async sub _grant_f {
 1;
 ```
 
-- [ ] **Step 5: Test laufen lassen, Übergabe**
+- [ ] **Step 5: Run the test, handover**
 
-Run: `prove -lr t/30-auth.t` — Expected: PASS (6 Subtests). Module in `t/00-load.t`, `prove -lr t` grün. Betreff: `Add errors, async HTTP role and admin login`.
+Run: `prove -lr t/30-auth.t` — Expected: PASS (6 subtests). Modules into `t/00-load.t`, `prove -lr t` green. Subject: `Add errors, async HTTP role and admin login`.
 
 ---
 
-### Task 2: OIDC, Admin, Fassade
+### Task 2: OIDC, Admin, facade
 
 **Files:**
 - Create: `lib/Net/Async/Keycloak/OIDC.pm`, `lib/Net/Async/Keycloak/Admin.pm`
-- Modify: `lib/Net/Async/Keycloak.pm` (der Stub wird ersetzt)
+- Modify: `lib/Net/Async/Keycloak.pm` (the stub is replaced)
 - Test: `t/40-facade.t`, `t/50-admin.t`, `t/51-admin-ensure.t`, `t/60-oidc.t`
 
 **Interfaces:**
-- Consumes: Aufgabe 1; `WWW::Keycloak::Diff`.
-- Produces: alle Methoden aus `WWW::Keycloak::OIDC` und `WWW::Keycloak::Admin` mit `_f`, dazu `discovery_f` und `endpoint_f` (im Sync-Client Attribut und Methode ohne Future). Fassade `Net::Async::Keycloak->new(...)` mit `http`, `auth`, `oidc`, `admin`, `issuer`, `for_realm`.
+- Consumes: task 1; `WWW::Keycloak::Diff`.
+- Produces: all methods from `WWW::Keycloak::OIDC` and `WWW::Keycloak::Admin` with `_f`, plus `discovery_f` and `endpoint_f` (in the sync client an attribute and a method without a Future). Facade `Net::Async::Keycloak->new(...)` with `http`, `auth`, `oidc`, `admin`, `issuer`, `for_realm`.
 
-- [ ] **Step 1: Tests schreiben und scheitern sehen**
+- [ ] **Step 1: Write the tests and watch them fail**
 
 `t/40-facade.t`:
 
@@ -1040,9 +1040,9 @@ subtest 'userinfo, introspect, logout' => sub {
 done_testing;
 ```
 
-Run: `prove -lr t/40-facade.t t/50-admin.t t/51-admin-ensure.t t/60-oidc.t` — Expected: FAIL; der Stub hat kein `new` mit diesen Attributen.
+Run: `prove -lr t/40-facade.t t/50-admin.t t/51-admin-ensure.t t/60-oidc.t` — Expected: FAIL; the stub has no `new` with these attributes.
 
-- [ ] **Step 2: OIDC, Admin und Fassade schreiben**
+- [ ] **Step 2: Write OIDC, Admin and facade**
 
 `lib/Net/Async/Keycloak/OIDC.pm`:
 
@@ -1933,20 +1933,20 @@ through the shared C<http>.
 1;
 ```
 
-- [ ] **Step 3: Tests laufen lassen, Übergabe**
+- [ ] **Step 3: Run the tests, handover**
 
-Run: `prove -lr t` — Expected: PASS (3, 9, 6 und 7 Subtests in den neuen Dateien). Betreff: `Add OIDC, Admin API and the facade`.
+Run: `prove -lr t` — Expected: PASS (3, 9, 6 and 7 subtests in the new files). Subject: `Add OIDC, Admin API and the facade`.
 
 ---
 
-### Task 3: Fehler- und Async-Tests, Live-Suite, README
+### Task 3: Error and async tests, live suite, README
 
 **Files:**
 - Test: `t/20-errors.t`, `t/70-async.t`, `t/90-live-keycloak.t`
-- Create: `t/keycloak/k8s.yaml` (Kopie aus `p5-www-keycloak`)
+- Create: `t/keycloak/k8s.yaml` (copy from `p5-www-keycloak`)
 - Modify: `README.md`
 
-- [ ] **Step 1: Tests schreiben**
+- [ ] **Step 1: Write the tests**
 
 `t/20-errors.t`:
 
@@ -2235,7 +2235,7 @@ subtest 'clean up' => sub {
 done_testing;
 ```
 
-- [ ] **Step 2: README ersetzen**
+- [ ] **Step 2: Replace README**
 
 `README.md`:
 
@@ -2286,6 +2286,6 @@ This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 ````
 
-- [ ] **Step 3: Alles laufen lassen**
+- [ ] **Step 3: Run everything**
 
-Run: `prove -lr t && dzil test` — Expected: PASS. Mit laufendem Keycloak: `KEYCLOAK_LIVE_TEST=1 KEYCLOAK_URL=... prove -lv t/90-live-keycloak.t` — Expected: PASS (4 Subtests). Betreff: `Add error, async and live tests, README`.
+Run: `prove -lr t && dzil test` — Expected: PASS. With a running Keycloak: `KEYCLOAK_LIVE_TEST=1 KEYCLOAK_URL=... prove -lv t/90-live-keycloak.t` — Expected: PASS (4 subtests). Subject: `Add error, async and live tests, README`.

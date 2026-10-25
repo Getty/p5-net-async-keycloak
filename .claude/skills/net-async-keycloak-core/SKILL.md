@@ -3,7 +3,7 @@ name: net-async-keycloak-core
 description: Use when working on Net::Async::Keycloak — the IO::Async/Future client for Keycloak's OIDC and Admin REST API: module layout, twin contract, ensure_*_f, errors, tests.
 ---
 
-# net-async-keycloak — Kern
+# net-async-keycloak — core
 
 IO::Async-based client for Keycloak, the async twin of `WWW::Keycloak` (`~/dev/p5-www-keycloak`), modelled on
 `Net::Async::Zitadel` (`~/dev/p5-net-async-zitadel`). The design is fixed in
