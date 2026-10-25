@@ -7,7 +7,8 @@ The sync twin leads: an API lands in `p5-www-keycloak` first and is mirrored her
 ## Delegation
 
 Delegate behavior-relevant code to the right agent instead of touching it yourself —
-principle and lane are in `.claude/rules/net-async-keycloak-rules.md`.
+the delegation lock and the publish gate are shared house rules (skilletor bundle
+`getty-cpan-dist@getty`); lanes and hazards are in `.claude/rules/net-async-keycloak-rules.md`.
 
 | Task | Agent |
 |---|---|
