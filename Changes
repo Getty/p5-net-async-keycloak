@@ -10,7 +10,9 @@ Revision history for Net-Async-Keycloak
       undef or empty key instead of listing everything and matching nothing
     - Net::Async::Keycloak::Auth: a 2xx from the token endpoint without an
       access_token (a proxy's HTML page, JSON without or with an empty
-      token) is a failed login with Error::API, not a cached undef token
+      token) is a failed login with Error::API, not a cached undef token;
+      a refused login names the reason of the underlying error when Keycloak
+      gave none and carries the body that came
 
 0.001     2026-10-04 18:03:50Z
     - Net::Async::Keycloak::Auth: admin token as a future, shared by callers waiting at the same time

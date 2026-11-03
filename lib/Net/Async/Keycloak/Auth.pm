@@ -170,11 +170,14 @@ async sub _grant_f {
   my $answer = eval { await $self->send_request_f( POST => $self->token_endpoint, form => $form ) };
   if ( my $error = $@ ) {
     die $error unless blessed $error && $error->isa('WWW::Keycloak::Error::API');
+    # Keycloak said nothing itself; then the reason is the one of the error
+    my $why = defined $error->api_message ? $error->api_message : $error->message;
     $self->api_error_class->throw(
-      message     => 'admin login failed: '.$error->http_status.( defined $error->api_message ? ' - '.$error->api_message : '' ),
+      message     => 'admin login failed: '.$error->http_status.( defined $why && length $why ? ' - '.$why : '' ),
       http_status => $error->http_status,
       api_message => $error->api_message,
-      oauth_error => $error->oauth_error
+      oauth_error => $error->oauth_error,
+      body        => $error->body
     );
   }
   my $data = $answer->{data};
