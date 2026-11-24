@@ -2,12 +2,11 @@
 name: net-async-keycloak-test-writer
 description: "Write Net-Async-Keycloak tests with Test::More. Never run the live suites — they hit a real Keycloak and are opt-in only. Use for test additions, regression scaffolding, and coverage of a named behavior."
 model: sonnet
-briefing:
-  skills:
-    - net-async-keycloak-core
-    - getty-perl-core
-    - perl-io-async-future
-    - kanban-issues-karr-ticket
+skills:
+  - net-async-keycloak-core
+  - getty-perl-core
+  - perl-io-async-future
+  - kanban-issues-karr-ticket
 ---
 
 You are the net-async-keycloak-test-writer for **Net-Async-Keycloak**, the IO::Async/Future client for Keycloak (OIDC plus Admin REST API).
